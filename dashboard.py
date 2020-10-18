@@ -86,9 +86,7 @@ class UDPHandler_mpu(SocketServer.BaseRequestHandler):
     global dl_gyro
     
     data = self.request[0]
-    print data
     dl_gyro=json.loads(data)
-    pprint(dl_gyro)
 
 class UDPHandler_mpl(SocketServer.BaseRequestHandler):
   def handle(self):
@@ -97,7 +95,9 @@ class UDPHandler_mpl(SocketServer.BaseRequestHandler):
 
 class UDPHandler_wifi(SocketServer.BaseRequestHandler):
   def handle(self):
-    data = self.request[0].strip()
+    global dl_wifi
+    data = self.request[0]
+    dl_wifi=json.loads(data)
     #print data
 
 class UDPHandler_gps(SocketServer.BaseRequestHandler):
@@ -223,8 +223,8 @@ def displayscreen_1():
 def displayscreen_2():
   global dl_gyro
   #Result := ((Input - InputLow) / (InputHigh - InputLow)) * (OutputHigh - OutputLow) + OutputLow;
-  sidled=int(dl_gyro[u"accelerometerx"])*20  # -10 - +10
-  lutning=0-int(dl_gyro[u'accelerometery'])*20 # -10 - +10
+  sidled=int(dl_gyro["accelerometerx"]*20)  # -10 - +10
+  lutning=0-int(dl_gyro['accelerometery']*20) # -10 - +10
   menutext=str(lutning)+ ' ' + str(sidled)
   r=sf12.get_rect(menutext)
   sf12.render_to(userscreen,[screensizex/2-(r.w/2),screensizey/8-(r.h/2)],menutext,WHITE,BLACK)
@@ -240,11 +240,12 @@ def displayscreen_2():
 tmp_wifi=dict()
 rssi_wifi=dict()
 def displayscreen_7():
-  global dl_wifi,tmp_wifi,rssi_wifi
+  global dl_wifi,tmp_wifi,rssi_wifi,loop_wifi
+  loop_wifi=dl_wifi
   i=0
 #  pprint(dl_wifi['0'])
-  for k in dl_wifi.keys():
-    w=dl_wifi[k]
+  for k in loop_wifi.keys():
+    w=loop_wifi[k]
     tmp_wifi[ w['bssid']+'-'+w['ssid'] ] = w
     if rssi_wifi.has_key(w['bssid']+'-'+w['ssid']):
       rssi_wifi[ w['bssid']+'-'+w['ssid'] ].append( w['rssi'] )
@@ -253,8 +254,8 @@ def displayscreen_7():
     
   for wifi in rssi_wifi.keys():
     found=False
-    for k in dl_wifi.keys():
-      w=dl_wifi[k]
+    for k in loop_wifi.keys():
+      w=loop_wifi[k]
       if wifi == w['bssid']+'-'+w['ssid']:
         found=True
     if found == False:
@@ -351,7 +352,6 @@ server_gps_thread.daemon = True
 server_gps_thread.start()
 
 while 1:
-    update_datalogger()
     displayscreen()
     for event in pygame.event.get():
         if event.type == pygame.QUIT: sys.exit()
