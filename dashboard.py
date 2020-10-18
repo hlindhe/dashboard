@@ -10,6 +10,8 @@ import locale
 import socket
 import json
 import array
+import threading
+import SocketServer
 
 # statusline
 # x x x 
@@ -37,9 +39,11 @@ GREY080              = pygame.Color("#808080")
 GREY0B0              = pygame.Color("#B0B0B0")
 
 
-
-
-
+###
+#
+# init
+#
+###
 display=1
 pygame.init()
 screen = pygame.display.set_mode([0,0], pygame.FULLSCREEN|pygame.NOFRAME)
@@ -65,13 +69,67 @@ sock.settimeout(0.1)
 dl_gyro=dict(asd=0)
 dl_wifi=dict(asd=0)
 
+
+
+###
+#
+# UDP
+#
+###
+class UDPHandler_bmp(SocketServer.BaseRequestHandler):
+  def handle(self):
+    data = self.request[0].strip()
+    #print data
+
+class UDPHandler_mpu(SocketServer.BaseRequestHandler):
+  def handle(self):
+    global dl_gyro
+    
+    data = self.request[0]
+    print data
+    dl_gyro=json.loads(data)
+    pprint(dl_gyro)
+
+class UDPHandler_mpl(SocketServer.BaseRequestHandler):
+  def handle(self):
+    data = self.request[0].strip()
+    #print data
+
+class UDPHandler_wifi(SocketServer.BaseRequestHandler):
+  def handle(self):
+    data = self.request[0].strip()
+    #print data
+
+class UDPHandler_gps(SocketServer.BaseRequestHandler):
+  def handle(self):
+    data = self.request[0].strip()
+    #print data
+
+class ThreadedUDPServer_bmp(SocketServer.ThreadingMixIn, SocketServer.UDPServer):
+    pass
+
+class ThreadedUDPServer_mpu(SocketServer.ThreadingMixIn, SocketServer.UDPServer):
+    pass
+
+class ThreadedUDPServer_mpl(SocketServer.ThreadingMixIn, SocketServer.UDPServer):
+    pass
+
+class ThreadedUDPServer_wifi(SocketServer.ThreadingMixIn, SocketServer.UDPServer):
+    pass
+
+class ThreadedUDPServer_gps(SocketServer.ThreadingMixIn, SocketServer.UDPServer):
+    pass
+
+
 def update_datalogger():
   global dl_gyro,dl_wifi
-  sock.sendto('mpu6050',('localhost',18600))
-  r=sock.recv(1024)
+  #sock.sendto('mpu6050',('localhost',18600))
+  #r=sock.recv(1024)
+  r="{}"
   dl_gyro=json.loads(r)
-  sock.sendto('wifi',('localhost',18600))
-  r=sock.recv(4000)
+  #sock.sendto('wifi',('localhost',18600))
+  #r=sock.recv(4000)
+  
   dl_wifi=json.loads(r)
 
 def displayscreenheader():
@@ -165,11 +223,13 @@ def displayscreen_1():
 def displayscreen_2():
   global dl_gyro
   #Result := ((Input - InputLow) / (InputHigh - InputLow)) * (OutputHigh - OutputLow) + OutputLow;
-  sidled=0-float(dl_gyro['accelerometerx'])*9  # -10 - +10
-  lutning=float(dl_gyro['accelerometery'])*9 # -10 - +10
+  sidled=int(dl_gyro[u"accelerometerx"])*20  # -10 - +10
+  lutning=0-int(dl_gyro[u'accelerometery'])*20 # -10 - +10
   menutext=str(lutning)+ ' ' + str(sidled)
   r=sf12.get_rect(menutext)
   sf12.render_to(userscreen,[screensizex/2-(r.w/2),screensizey/8-(r.h/2)],menutext,WHITE,BLACK)
+  pygame.draw.circle(userscreen, GREY040, [screensizex/2,screensizey/2], 100,2)
+  pygame.draw.circle(userscreen, WHITE, [screensizex/2+sidled,screensizey/2+lutning], 10)
 #  sida = pygame.transform.rotate(caddyside,lutning)
 #  userscreen.blit(sida,[50,50])
 #  back = pygame.transform.rotate(caddyback,sidled)
@@ -265,7 +325,30 @@ def displayscreen():
 
 
 
+server_bmp = ThreadedUDPServer_bmp(("localhost",5572),UDPHandler_bmp)
+server_bmp_thread = threading.Thread(target=server_bmp.serve_forever)
+server_bmp_thread.daemon = True
+server_bmp_thread.start()
 
+server_mpu = ThreadedUDPServer_bmp(("localhost",5573),UDPHandler_mpu)
+server_mpu_thread = threading.Thread(target=server_mpu.serve_forever)
+server_mpu_thread.daemon = True
+server_mpu_thread.start()
+
+server_mpl = ThreadedUDPServer_bmp(("localhost",5574),UDPHandler_mpl)
+server_mpl_thread = threading.Thread(target=server_mpl.serve_forever)
+server_mpl_thread.daemon = True
+server_mpl_thread.start()
+
+server_wifi = ThreadedUDPServer_bmp(("localhost",5575),UDPHandler_wifi)
+server_wifi_thread = threading.Thread(target=server_wifi.serve_forever)
+server_wifi_thread.daemon = True
+server_wifi_thread.start()
+
+server_gps = ThreadedUDPServer_bmp(("localhost",5576),UDPHandler_gps)
+server_gps_thread = threading.Thread(target=server_gps.serve_forever)
+server_gps_thread.daemon = True
+server_gps_thread.start()
 
 while 1:
     update_datalogger()
