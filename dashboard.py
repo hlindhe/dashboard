@@ -78,7 +78,8 @@ dl_wifi=dict(asd=0)
 ###
 class UDPHandler_bmp(SocketServer.BaseRequestHandler):
   def handle(self):
-    data = self.request[0].strip()
+    global dl_bmp
+    data = self.request[0]
     #print data
 
 class UDPHandler_mpu(SocketServer.BaseRequestHandler):
@@ -223,13 +224,15 @@ def displayscreen_1():
 def displayscreen_2():
   global dl_gyro
   #Result := ((Input - InputLow) / (InputHigh - InputLow)) * (OutputHigh - OutputLow) + OutputLow;
-  sidled=int(dl_gyro["accelerometerx"]*20)  # -10 - +10
-  lutning=0-int(dl_gyro['accelerometery']*20) # -10 - +10
-  menutext=str(lutning)+ ' ' + str(sidled)
+  sidled=0-int(dl_gyro["accelerometerx"]*20)  # -10 - +10
+  lutning=int(dl_gyro['accelerometery']*20) # -10 - +10
+  menutext=str(lutning)+ ' ' + str(sidled)+' '+str(dl_gyro['ts'])
   r=sf12.get_rect(menutext)
   sf12.render_to(userscreen,[screensizex/2-(r.w/2),screensizey/8-(r.h/2)],menutext,WHITE,BLACK)
-  pygame.draw.circle(userscreen, GREY040, [screensizex/2,screensizey/2], 100,2)
-  pygame.draw.circle(userscreen, WHITE, [screensizex/2+sidled,screensizey/2+lutning], 10)
+  pygame.draw.circle(userscreen, GREY040, [userscreensizex/2,userscreensizey/2], 100,2)
+  pygame.draw.circle(userscreen, GREY040, [userscreensizex/2,userscreensizey/2], 50,2)
+  pygame.draw.circle(userscreen, GREY040, [userscreensizex/2,userscreensizey/2], 10,2)
+  pygame.draw.circle(userscreen, WHITE, [userscreensizex/2+sidled,userscreensizey/2-lutning], 10)
 #  sida = pygame.transform.rotate(caddyside,lutning)
 #  userscreen.blit(sida,[50,50])
 #  back = pygame.transform.rotate(caddyback,sidled)
