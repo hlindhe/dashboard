@@ -17,6 +17,8 @@ import SocketServer
 # x x x 
 # 80x80 
 
+
+mainclock=pygame.time.Clock()
 locale.setlocale(locale.LC_ALL,'sv_SE')
 
 screensizex = 0
@@ -66,8 +68,11 @@ caddyside = caddyside.convert_alpha()
 
 sock = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
 sock.settimeout(0.1)
-dl_gyro=dict(asd=0)
+dl_mpu=dict(asd=0)
 dl_wifi=dict(asd=0)
+dl_bmp=dict(asd=0)
+dl_mpl=dict(asd=0)
+dl_gps=dict(asd=0)
 
 
 
@@ -80,19 +85,20 @@ class UDPHandler_bmp(SocketServer.BaseRequestHandler):
   def handle(self):
     global dl_bmp
     data = self.request[0]
-    #print data
+    dl_bmp=json.loads(data)
 
 class UDPHandler_mpu(SocketServer.BaseRequestHandler):
   def handle(self):
-    global dl_gyro
+    global dl_mpu
     
     data = self.request[0]
-    dl_gyro=json.loads(data)
+    dl_mpu=json.loads(data)
 
 class UDPHandler_mpl(SocketServer.BaseRequestHandler):
   def handle(self):
-    data = self.request[0].strip()
-    #print data
+    global dl_mpl
+    data = self.request[0]
+    dl_mpl=json.loads(data)
 
 class UDPHandler_wifi(SocketServer.BaseRequestHandler):
   def handle(self):
@@ -103,8 +109,9 @@ class UDPHandler_wifi(SocketServer.BaseRequestHandler):
 
 class UDPHandler_gps(SocketServer.BaseRequestHandler):
   def handle(self):
-    data = self.request[0].strip()
-    #print data
+    global dl_gps
+    data = self.request[0]
+    dl_gps=json.loads(data)
 
 class ThreadedUDPServer_bmp(SocketServer.ThreadingMixIn, SocketServer.UDPServer):
     pass
@@ -121,17 +128,6 @@ class ThreadedUDPServer_wifi(SocketServer.ThreadingMixIn, SocketServer.UDPServer
 class ThreadedUDPServer_gps(SocketServer.ThreadingMixIn, SocketServer.UDPServer):
     pass
 
-
-def update_datalogger():
-  global dl_gyro,dl_wifi
-  #sock.sendto('mpu6050',('localhost',18600))
-  #r=sock.recv(1024)
-  r="{}"
-  dl_gyro=json.loads(r)
-  #sock.sendto('wifi',('localhost',18600))
-  #r=sock.recv(4000)
-  
-  dl_wifi=json.loads(r)
 
 def displayscreenheader():
 #    pygame.gfxdraw.rectangle(screen,(0,0,screensizex,mainmenubuttonsize),YELLOW)
@@ -222,21 +218,20 @@ def displayscreen_1():
   return
 
 def displayscreen_2():
-  global dl_gyro
+  global dl_mpu
   #Result := ((Input - InputLow) / (InputHigh - InputLow)) * (OutputHigh - OutputLow) + OutputLow;
-  sidled=0-int(dl_gyro["accelerometerx"]*20)  # -10 - +10
-  lutning=int(dl_gyro['accelerometery']*20) # -10 - +10
-  menutext=str(lutning)+ ' ' + str(sidled)+' '+str(dl_gyro['ts'])
+  sidled=0-int(dl_mpu["accelerometerx"]*10)  # -10 - +10
+  lutning=int(dl_mpu['accelerometery']*10) # -10 - +10
+  menutext=str(lutning)+ ' ' + str(sidled)+' '+str(mainclock.get_fps())
   r=sf12.get_rect(menutext)
   sf12.render_to(userscreen,[screensizex/2-(r.w/2),screensizey/8-(r.h/2)],menutext,WHITE,BLACK)
-  pygame.draw.circle(userscreen, GREY040, [userscreensizex/2,userscreensizey/2], 100,2)
-  pygame.draw.circle(userscreen, GREY040, [userscreensizex/2,userscreensizey/2], 50,2)
-  pygame.draw.circle(userscreen, GREY040, [userscreensizex/2,userscreensizey/2], 10,2)
-  pygame.draw.circle(userscreen, WHITE, [userscreensizex/2+sidled,userscreensizey/2-lutning], 10)
-#  sida = pygame.transform.rotate(caddyside,lutning)
-#  userscreen.blit(sida,[50,50])
-#  back = pygame.transform.rotate(caddyback,sidled)
-#  userscreen.blit(back,[500,50])
+  pygame.gfxdraw.circle(userscreen, userscreensizex/2,userscreensizey/2, 50,GREY040)
+  pygame.gfxdraw.circle(userscreen, userscreensizex/2,userscreensizey/2, 10,GREY040)
+  pygame.gfxdraw.filled_circle(userscreen, userscreensizex/2+sidled,userscreensizey/2-lutning,10,WHITE)
+  sida = pygame.transform.rotate(caddyside,lutning)
+  userscreen.blit(sida,[(userscreensizex/4)-int(sida.get_width()/2),(userscreensizey/2)-int(sida.get_height()/2)])
+  back = pygame.transform.rotate(caddyback,sidled)
+  userscreen.blit(back,[((userscreensizex/4)*3)-int(back.get_width()/2),(userscreensizey/2)-int(back.get_height()/2)])
   return
 
 
@@ -334,22 +329,22 @@ server_bmp_thread = threading.Thread(target=server_bmp.serve_forever)
 server_bmp_thread.daemon = True
 server_bmp_thread.start()
 
-server_mpu = ThreadedUDPServer_bmp(("localhost",5573),UDPHandler_mpu)
+server_mpu = ThreadedUDPServer_mpu(("localhost",5573),UDPHandler_mpu)
 server_mpu_thread = threading.Thread(target=server_mpu.serve_forever)
 server_mpu_thread.daemon = True
 server_mpu_thread.start()
 
-server_mpl = ThreadedUDPServer_bmp(("localhost",5574),UDPHandler_mpl)
+server_mpl = ThreadedUDPServer_mpl(("localhost",5574),UDPHandler_mpl)
 server_mpl_thread = threading.Thread(target=server_mpl.serve_forever)
 server_mpl_thread.daemon = True
 server_mpl_thread.start()
 
-server_wifi = ThreadedUDPServer_bmp(("localhost",5575),UDPHandler_wifi)
+server_wifi = ThreadedUDPServer_wifi(("localhost",5575),UDPHandler_wifi)
 server_wifi_thread = threading.Thread(target=server_wifi.serve_forever)
 server_wifi_thread.daemon = True
 server_wifi_thread.start()
 
-server_gps = ThreadedUDPServer_bmp(("localhost",5576),UDPHandler_gps)
+server_gps = ThreadedUDPServer_gps(("localhost",5576),UDPHandler_gps)
 server_gps_thread = threading.Thread(target=server_gps.serve_forever)
 server_gps_thread.daemon = True
 server_gps_thread.start()
@@ -374,4 +369,5 @@ while 1:
         elif event.type == pygame.MOUSEBUTTONDOWN:
           if event.pos[1] >=screensizey-mainmenubuttonsize:
             display=event.pos[0]/mainmenubuttonsize
-    time.sleep(0.001)
+    mainclock.tick(50)
+
