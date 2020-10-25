@@ -10,6 +10,10 @@ import locale
 import socket
 import json
 import array
+
+import paho.mqtt.client as mqtt
+
+
 import threading
 import SocketServer
 
@@ -18,8 +22,25 @@ import SocketServer
 # 80x80 
 
 
+# 
+# mqtt
+#
+def mqtt_on_connect(client, userdata, flags, rc):
+  print("Connected MQTT")
+  client.subscribe("mpu6050/#")
+
+def mqtt_on_message(client, userdata, msg):
+  print(msg.topic+" "+str(msg.payload))
+
 mainclock=pygame.time.Clock()
 locale.setlocale(locale.LC_ALL,'sv_SE')
+
+
+mqttclient=mqtt.Client()
+mqttclient.on_connect = mqtt_on_connect
+mqttclient.on_message = mqtt_on_message
+mqttclient.connect("localhost")
+mqttclient.loop_start()
 
 screensizex = 0
 screensizey = 0
