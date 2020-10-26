@@ -30,6 +30,7 @@ GREY010              = pygame.Color("#101010")
 GREY040              = pygame.Color("#404040")
 GREY080              = pygame.Color("#808080")
 GREY0B0              = pygame.Color("#B0B0B0")
+GREY0C0              = pygame.Color("#C0C0C0")
 TRANSPARENT          = pygame.Color(0,0,0,0)
 
 #
@@ -38,18 +39,20 @@ TRANSPARENT          = pygame.Color(0,0,0,0)
 running=True
 menuscreen=1
 
+menubuttons=10
 
 #
 # pygame
 #
 def displayscreen():
-  screen.fill(BLACK)
+#  screen.fill(BLACK)
   screen.fill(BLUE)
   userscreen.fill(YELLOW)
-  headerscreen.fill(RED)
-  buttonsscreen.fill(GREEN)
+#  headerscreen.fill(RED)
+#  buttonsscreen.fill(GREEN)
 
   display_headerscreen()
+  display_buttonscreen()
   pygame.display.flip()
   return
 
@@ -69,6 +72,45 @@ def display_headerscreen():
 #  print(datestring_rect)
   return
 
+def display_buttonscreen():
+  buttonsscreen.fill(GREEN)
+  for i in range(menubuttons):
+    x=i*80
+    y=0
+    r=pygame.Rect(x,y,80,80)
+    pygame.draw.rect(buttonsscreen,pygame.Color(i*16,i*16,i*16),r,0)
+    
+    menuchar=""
+    menutext=""
+    if i==0:
+      menuchar=u'\uf015'
+    if i==1:
+      menutext='Fönster'
+    if i==2:
+      menutext='Lutning'
+    if i==3:
+      menutext='Tank'
+      #menuchar=u'\uf52f'
+    if i==4:
+      menuchar=u'\uf16d'
+    if i==5:
+      menuchar=u'\uf201'
+    if i==6:
+      menuchar=u'\uf0e4'
+    if i==7:
+      menuchar=u'\uf1eb'
+    if i==8:
+      menuchar=u'\uf279'
+    if i==9:
+      menuchar=u'\uf0ad'
+    if menuchar != "":
+      mr=fontawesome48.get_rect(menuchar)
+      mr.center = r.center
+      fontawesome48.render_to(buttonsscreen,mr,menuchar,WHITE,BLACK)    
+    elif menutext != "":
+      mr=fontsystem12.get_rect(menutext)
+      mr.center=r.center
+      fontsystem12.render_to(buttonsscreen,mr,menutext,WHITE,BLACK)
 # 
 # mqtt
 #
@@ -107,8 +149,6 @@ headerscreen = screen.subsurface([0,0,800,80])
 userscreen = screen.subsurface([80,80,640,320])
 buttonsscreen = screen.subsurface([0,400,800,80])
 
-print(pygame.font.SysFont(None,48))
-
 fontawesome48=pygame.freetype.Font('fontawesome-webfont.ttf',48)
 fontawesome72=pygame.freetype.Font('fontawesome-webfont.ttf',72)
 fontsystem12=pygame.freetype.SysFont(pygame.freetype.get_default_font(),12)
@@ -124,4 +164,20 @@ while running:
     if event.type == pygame.QUIT: running=False
     elif event.type == pygame.KEYDOWN:
       if event.key == pygame.K_q: running=False
-  mainclock.tick(50)
+      if event.key == pygame.K_F1: menuscreen=1
+      if event.key == pygame.K_F2: menuscreen=2
+      if event.key == pygame.K_F3: menuscreen=3
+      if event.key == pygame.K_F4: menuscreen=4
+      if event.key == pygame.K_F5: menuscreen=5
+      if event.key == pygame.K_F6: menuscreen=6
+      if event.key == pygame.K_F7: menuscreen=7
+      if event.key == pygame.K_F8: menuscreen=8
+      if event.key == pygame.K_F9: menuscreen=9
+    elif event.type == pygame.MOUSEBUTTONDOWN:
+      r1=buttonsscreen.get_rect()
+      r2=buttonsscreen.get_abs_offset()
+      r1.left=r2[0]
+      r1.top=r2[1]
+      if r1.collidepoint(event.pos):
+        menuscreen=int(event.pos[0]/80)
+  mainclock.tick(24)
