@@ -37,27 +37,48 @@ TRANSPARENT          = pygame.Color(0,0,0,0)
 # globals
 #
 running=True
-menuscreen=1
+menuscreen=0
 
 menubuttons=10
+daymode = False
 
 #
 # pygame
 #
 def displayscreen():
-#  screen.fill(BLACK)
-  screen.fill(BLUE)
-  userscreen.fill(YELLOW)
+#  screen.fill(BLUE)
+#  userscreen.fill(YELLOW)
 #  headerscreen.fill(RED)
 #  buttonsscreen.fill(GREEN)
-
   display_headerscreen()
   display_buttonscreen()
+
+  if menuscreen == 0:
+    displayscreen_0()
+  elif menuscreen == 1:
+    displayscreen_1()
+  elif menuscreen == 2:
+    displayscreen_2()
+  elif menuscreen == 3:
+    displayscreen_3()
+  elif menuscreen == 4:
+    displayscreen_4()
+  elif menuscreen == 5:
+    displayscreen_5()
+  elif menuscreen == 6:
+    displayscreen_6()
+  elif menuscreen == 7:
+    displayscreen_7()
+  elif menuscreen == 8:
+    displayscreen_8()
+  elif menuscreen == 9:
+    displayscreen_9()
+
   pygame.display.flip()
   return
 
 def display_headerscreen():
-  headerscreen.fill(GREY040)
+  headerscreen.fill(BLACK)
   timestring=time.strftime('%H:%M:%S')
   timestring_rect=fontsystem48.get_rect('88:88:88')
   timestring_rect.center=headerscreen.get_rect().center
@@ -65,20 +86,26 @@ def display_headerscreen():
   datestring_rect=fontsystem24.get_rect(datestring)
   datestring_rect.bottom=timestring_rect.bottom
   datestring_rect.left=40 #headerscreen.get_rect().centerx/3
-  
-  fontsystem48.render_to(headerscreen,timestring_rect,timestring,WHITE,GREY040)
-  fontsystem24.render_to(headerscreen,datestring_rect,datestring,WHITE,GREY040)
-#  print(timestring_rect)
-#  print(datestring_rect)
+  if daymode:
+    fontsystem48.render_to(headerscreen,timestring_rect,timestring,WHITE,GREY040)
+    fontsystem24.render_to(headerscreen,datestring_rect,datestring,WHITE,GREY040)
+  else:
+    fontsystem48.render_to(headerscreen,timestring_rect,timestring,RED,BLACK)
+    fontsystem24.render_to(headerscreen,datestring_rect,datestring,RED,BLACK)
+
+
+#TODO: Add icons for gps, network, canbus
+
   return
 
 def display_buttonscreen():
-  buttonsscreen.fill(GREEN)
+  buttonsscreen.fill(BLACK)
   for i in range(menubuttons):
     x=i*80
     y=0
     r=pygame.Rect(x,y,80,80)
-    pygame.draw.rect(buttonsscreen,pygame.Color(i*16,i*16,i*16),r,0)
+    #if menuscreen==i:
+    #  pygame.draw.rect(buttonsscreen,BLUE,r,0)
     
     menuchar=""
     menutext=""
@@ -106,11 +133,53 @@ def display_buttonscreen():
     if menuchar != "":
       mr=fontawesome48.get_rect(menuchar)
       mr.center = r.center
-      fontawesome48.render_to(buttonsscreen,mr,menuchar,WHITE,BLACK)    
+      if daymode:
+        fontawesome48.render_to(buttonsscreen,mr,menuchar,WHITE,BLACK)    
+      else:
+        fontawesome48.render_to(buttonsscreen,mr,menuchar,RED,BLACK)
     elif menutext != "":
       mr=fontsystem12.get_rect(menutext)
       mr.center=r.center
-      fontsystem12.render_to(buttonsscreen,mr,menutext,WHITE,BLACK)
+      if daymode:
+        fontsystem12.render_to(buttonsscreen,mr,menutext,WHITE,BLACK)
+      else:
+        fontsystem12.render_to(buttonsscreen,mr,menutext,RED,BLACK)
+    if menuscreen == i:
+      if daymode:
+        pygame.draw.line(buttonsscreen,WHITE,r.bottomleft,r.bottomright,4)
+      else:
+        pygame.draw.line(buttonsscreen,RED,r.bottomleft,r.bottomright,4)
+
+def displayscreen_0():
+  return
+
+def displayscreen_1():
+  return
+
+def displayscreen_2():
+  return
+  
+def displayscreen_3():
+  return
+  
+def displayscreen_4():
+  return
+  
+def displayscreen_5():
+  return
+  
+def displayscreen_6():
+  return
+  
+def displayscreen_7():
+  return
+  
+def displayscreen_8():
+  return
+  
+def displayscreen_9():
+  return
+
 # 
 # mqtt
 #
@@ -155,6 +224,11 @@ fontsystem12=pygame.freetype.SysFont(pygame.freetype.get_default_font(),12)
 fontsystem24=pygame.freetype.SysFont(pygame.freetype.get_default_font(),24)
 fontsystem48=pygame.freetype.SysFont(pygame.freetype.get_default_font(),48)
 #fontsystem12=pygame.freetype.SysFont(pygame.freetype.get_default_font(),12)
+
+screen.fill(BLACK)
+
+
+
 # 
 # main loop
 #
@@ -164,6 +238,9 @@ while running:
     if event.type == pygame.QUIT: running=False
     elif event.type == pygame.KEYDOWN:
       if event.key == pygame.K_q: running=False
+      if event.key == 27: running=False
+      if event.key == pygame.K_F10: menuscreen=0
+      if event.key == 167: menuscreen=0
       if event.key == pygame.K_F1: menuscreen=1
       if event.key == pygame.K_F2: menuscreen=2
       if event.key == pygame.K_F3: menuscreen=3
@@ -173,6 +250,8 @@ while running:
       if event.key == pygame.K_F7: menuscreen=7
       if event.key == pygame.K_F8: menuscreen=8
       if event.key == pygame.K_F9: menuscreen=9
+      print("key:")
+      print(event.key)
     elif event.type == pygame.MOUSEBUTTONDOWN:
       r1=buttonsscreen.get_rect()
       r2=buttonsscreen.get_abs_offset()
