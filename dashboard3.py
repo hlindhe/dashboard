@@ -38,157 +38,208 @@ TRANSPARENT          = pygame.Color(0,0,0,0)
 #
 running=True
 menuscreen=0
-
 menubuttons=10
-daymode = False
-
+daymode = True
+mqttvalues=dict()
+featureflags=dict()
+featureflags['haveaccelerometer']=False
+featureflags['havegps']=False
+featureflags['havecanbus']=False
+accelerometerxhistory=list()
+accelerometeryhistory=list()
+accelerometerzhistory=list()
 #
 # pygame
 #
+def updateflags():
+	if mqttvalues.get('mpu6050/accelerometer_x',False):
+		if mqttvalues.get('mpu6050/accelerometer_y',False):
+			if mqttvalues.get('mpu6050/accelerometer_z',False):
+				featureflags['haveaccelerometer']=True
+	
+	if featureflags['haveaccelerometer']:
+		accelerometerxhistory.append(float(mqttvalues.get('mpu6050/accelerometer_x')))
+		accelerometeryhistory.append(float(mqttvalues.get('mpu6050/accelerometer_y')))
+		accelerometerzhistory.append(float(mqttvalues.get('mpu6050/accelerometer_z')))
+		if len(accelerometerxhistory) > 300:
+			accelerometerxhistory.pop(0)
+			accelerometeryhistory.pop(0)
+			accelerometerzhistory.pop(0)
+
+
 def displayscreen():
 #  screen.fill(BLUE)
 #  userscreen.fill(YELLOW)
 #  headerscreen.fill(RED)
 #  buttonsscreen.fill(GREEN)
-  display_headerscreen()
-  display_buttonscreen()
+	display_headerscreen()
+	display_buttonscreen()
 
-  if menuscreen == 0:
-    displayscreen_0()
-  elif menuscreen == 1:
-    displayscreen_1()
-  elif menuscreen == 2:
-    displayscreen_2()
-  elif menuscreen == 3:
-    displayscreen_3()
-  elif menuscreen == 4:
-    displayscreen_4()
-  elif menuscreen == 5:
-    displayscreen_5()
-  elif menuscreen == 6:
-    displayscreen_6()
-  elif menuscreen == 7:
-    displayscreen_7()
-  elif menuscreen == 8:
-    displayscreen_8()
-  elif menuscreen == 9:
-    displayscreen_9()
+	if menuscreen == 0:
+		displayscreen_0()
+	elif menuscreen == 1:
+		displayscreen_1()
+	elif menuscreen == 2:
+		displayscreen_2()
+	elif menuscreen == 3:
+		displayscreen_3()
+	elif menuscreen == 4:
+		displayscreen_4()
+	elif menuscreen == 5:
+		displayscreen_5()
+	elif menuscreen == 6:
+		displayscreen_6()
+	elif menuscreen == 7:
+		displayscreen_7()
+	elif menuscreen == 8:
+		displayscreen_8()
+	elif menuscreen == 9:
+		displayscreen_9()
 
-  pygame.display.flip()
-  return
+	pygame.display.flip()
+	return
 
 def display_headerscreen():
-  headerscreen.fill(BLACK)
-  timestring=time.strftime('%H:%M:%S')
-  timestring_rect=fontsystem48.get_rect('88:88:88')
-  timestring_rect.center=headerscreen.get_rect().center
-  datestring=time.strftime('%A, %d %B')
-  datestring_rect=fontsystem24.get_rect(datestring)
-  datestring_rect.bottom=timestring_rect.bottom
-  datestring_rect.left=40 #headerscreen.get_rect().centerx/3
-  if daymode:
-    fontsystem48.render_to(headerscreen,timestring_rect,timestring,WHITE,GREY040)
-    fontsystem24.render_to(headerscreen,datestring_rect,datestring,WHITE,GREY040)
-  else:
-    fontsystem48.render_to(headerscreen,timestring_rect,timestring,RED,BLACK)
-    fontsystem24.render_to(headerscreen,datestring_rect,datestring,RED,BLACK)
+	headerscreen.fill(BLACK)
+	timestring=time.strftime('%H:%M:%S')
+	timestring_rect=fontsystem48.get_rect('88:88:88')
+	timestring_rect.center=headerscreen.get_rect().center
+	datestring=time.strftime('%A, %d %B')
+	datestring_rect=fontsystem24.get_rect(datestring)
+	datestring_rect.bottom=timestring_rect.bottom
+	datestring_rect.left=40 #headerscreen.get_rect().centerx/3
+	if daymode:
+		fontsystem48.render_to(headerscreen,timestring_rect,timestring,WHITE,BLACK)
+		fontsystem24.render_to(headerscreen,datestring_rect,datestring,WHITE,BLACK)
+	else:
+		fontsystem48.render_to(headerscreen,timestring_rect,timestring,RED,BLACK)
+		fontsystem24.render_to(headerscreen,datestring_rect,datestring,RED,BLACK)
 
 
 #TODO: Add icons for gps, network, canbus
 
-  return
+	return
 
 def display_buttonscreen():
-  buttonsscreen.fill(BLACK)
-  for i in range(menubuttons):
-    x=i*80
-    y=0
-    r=pygame.Rect(x,y,80,80)
-    #if menuscreen==i:
-    #  pygame.draw.rect(buttonsscreen,BLUE,r,0)
-    
-    menuchar=""
-    menutext=""
-    if i==0:
-      menuchar=u'\uf015'
-    if i==1:
-      menutext='Fönster'
-    if i==2:
-      menutext='Lutning'
-    if i==3:
-      menutext='Tank'
-      #menuchar=u'\uf52f'
-    if i==4:
-      menuchar=u'\uf16d'
-    if i==5:
-      menuchar=u'\uf201'
-    if i==6:
-      menuchar=u'\uf0e4'
-    if i==7:
-      menuchar=u'\uf1eb'
-    if i==8:
-      menuchar=u'\uf279'
-    if i==9:
-      menuchar=u'\uf0ad'
-    if menuchar != "":
-      mr=fontawesome48.get_rect(menuchar)
-      mr.center = r.center
-      if daymode:
-        fontawesome48.render_to(buttonsscreen,mr,menuchar,WHITE,BLACK)    
-      else:
-        fontawesome48.render_to(buttonsscreen,mr,menuchar,RED,BLACK)
-    elif menutext != "":
-      mr=fontsystem12.get_rect(menutext)
-      mr.center=r.center
-      if daymode:
-        fontsystem12.render_to(buttonsscreen,mr,menutext,WHITE,BLACK)
-      else:
-        fontsystem12.render_to(buttonsscreen,mr,menutext,RED,BLACK)
-    if menuscreen == i:
-      if daymode:
-        pygame.draw.line(buttonsscreen,WHITE,r.bottomleft,r.bottomright,4)
-      else:
-        pygame.draw.line(buttonsscreen,RED,r.bottomleft,r.bottomright,4)
+	buttonsscreen.fill(BLACK)
+	for i in range(menubuttons):
+		x=i*80
+		y=0
+		r=pygame.Rect(x,y,80,80)
+		#if menuscreen==i:
+		#  pygame.draw.rect(buttonsscreen,BLUE,r,0)
+		
+		menuchar=""
+		menutext=""
+		if i==0:
+			menuchar=u'\uf015'	# Home
+		if i==1:
+			menutext='Fönster'	# Fönster
+		if i==2:
+			menutext='Lutning'	# Lutning
+		if i==3:
+			menutext='Tank'		# Tank
+			#menuchar=u'\uf52f'
+		if i==4:
+			menuchar=u'\uf16d'	# Kamera
+		if i==5:
+			menuchar=u'\uf201'	# Grafer
+		if i==6:
+			menuchar=u'\uf0e4'	# Hastighet
+		if i==7:
+			menuchar=u'\uf1eb'	# Wifi
+		if i==8:
+			menuchar=u'\uf279'	# Kartor
+		if i==9:
+			menuchar=u'\uf0ad'	# Settings
+		if menuchar != "":
+			mr=fontawesome48.get_rect(menuchar)
+			mr.center = r.center
+			if daymode:
+				fontawesome48.render_to(buttonsscreen,mr,menuchar,WHITE,BLACK)    
+			else:
+				fontawesome48.render_to(buttonsscreen,mr,menuchar,RED,BLACK)
+		elif menutext != "":
+			mr=fontsystem12.get_rect(menutext)
+			mr.center=r.center
+			if daymode:
+				fontsystem12.render_to(buttonsscreen,mr,menutext,WHITE,BLACK)
+			else:
+				fontsystem12.render_to(buttonsscreen,mr,menutext,RED,BLACK)
+		if menuscreen == i:
+			if daymode:
+				pygame.draw.line(buttonsscreen,WHITE,r.bottomleft,r.bottomright,4)
+			else:
+				pygame.draw.line(buttonsscreen,RED,r.bottomleft,r.bottomright,4)
 
 def displayscreen_0():
-  return
+	userscreen.fill(YELLOW)
+
+	return
 
 def displayscreen_1():
-  return
+	return
 
 def displayscreen_2():
-  return
-  
+	userscreen.fill(BLACK)
+	if featureflags['haveaccelerometer']: 
+		myrect = userscreen.get_rect()
+		#print(myrect.midtop)
+		pygame.draw.line(userscreen,WHITE,myrect.midtop,myrect.midbottom)
+		pygame.draw.line(userscreen,WHITE,myrect.center,myrect.midright)
+		centerx=int(myrect.centerx/2)
+		centery=int(myrect.centery)
+		print(myrect)
+		x=int(float(mqttvalues.get('mpu6050/accelerometer_x',"0"))*20)
+		y=int(float(mqttvalues.get('mpu6050/accelerometer_y',"0"))*20)
+		for r in [10,20,30,40,50,60,70,80,90,100,110,120,130,140,150]:
+			if r % 20:
+				pygame.draw.circle(userscreen, GREY040, (centerx,centery), r, 1) 
+			else:
+				pygame.draw.circle(userscreen, GREY080, (centerx,centery), r, 1) 
+
+		pygame.draw.circle(userscreen, WHITE, (centerx+x,centery+y), 8, 0)
+
+		for i in range(len(accelerometerxhistory)):
+			pygame.draw.line(userscreen, GREY080, (320+i,80), (320+i,80+accelerometerxhistory[i]*20), 1)
+			pygame.draw.line(userscreen, GREY080, (320+i,160+80), (320+i,160+80+accelerometeryhistory[i]*20), 1)
+
+	return
+
 def displayscreen_3():
-  return
-  
+	return
+
 def displayscreen_4():
-  return
-  
+	return
+
 def displayscreen_5():
-  return
-  
+	return
+
 def displayscreen_6():
-  return
-  
+	return
+
 def displayscreen_7():
-  return
-  
+	return
+
 def displayscreen_8():
-  return
-  
+	return
+
 def displayscreen_9():
-  return
+	return
 
 # 
 # mqtt
 #
 def mqtt_on_connect(client, userdata, flags, rc):
-  print("Connected MQTT")
-#  client.subscribe("mpu6050/#")
+	print("Connected MQTT")
+	client.subscribe("mpu6050/accelerometer_x")
+	client.subscribe("mpu6050/accelerometer_y")
+	client.subscribe("mpu6050/accelerometer_z")
+	client.subscribe("gps/#")
 
 def mqtt_on_message(client, userdata, msg):
-  print(msg.topic+" "+str(msg.payload))
+	mqttvalues[msg.topic]=msg.payload
+#	print(msg.topic+" "+str(msg.payload))
 
 
 #
@@ -233,30 +284,31 @@ screen.fill(BLACK)
 # main loop
 #
 while running:
-  displayscreen()
-  for event in pygame.event.get():
-    if event.type == pygame.QUIT: running=False
-    elif event.type == pygame.KEYDOWN:
-      if event.key == pygame.K_q: running=False
-      if event.key == 27: running=False
-      if event.key == pygame.K_F10: menuscreen=0
-      if event.key == 167: menuscreen=0
-      if event.key == pygame.K_F1: menuscreen=1
-      if event.key == pygame.K_F2: menuscreen=2
-      if event.key == pygame.K_F3: menuscreen=3
-      if event.key == pygame.K_F4: menuscreen=4
-      if event.key == pygame.K_F5: menuscreen=5
-      if event.key == pygame.K_F6: menuscreen=6
-      if event.key == pygame.K_F7: menuscreen=7
-      if event.key == pygame.K_F8: menuscreen=8
-      if event.key == pygame.K_F9: menuscreen=9
-      print("key:")
-      print(event.key)
-    elif event.type == pygame.MOUSEBUTTONDOWN:
-      r1=buttonsscreen.get_rect()
-      r2=buttonsscreen.get_abs_offset()
-      r1.left=r2[0]
-      r1.top=r2[1]
-      if r1.collidepoint(event.pos):
-        menuscreen=int(event.pos[0]/80)
-  mainclock.tick(24)
+	updateflags()
+	displayscreen()
+	for event in pygame.event.get():
+		if event.type == pygame.QUIT: running=False
+		elif event.type == pygame.KEYDOWN:
+			if event.key == pygame.K_q: running=False
+			if event.key == 27: running=False
+			if event.key == pygame.K_F10: menuscreen=0
+			if event.key == 167: menuscreen=0
+			if event.key == pygame.K_F1: menuscreen=1
+			if event.key == pygame.K_F2: menuscreen=2
+			if event.key == pygame.K_F3: menuscreen=3
+			if event.key == pygame.K_F4: menuscreen=4
+			if event.key == pygame.K_F5: menuscreen=5
+			if event.key == pygame.K_F6: menuscreen=6
+			if event.key == pygame.K_F7: menuscreen=7
+			if event.key == pygame.K_F8: menuscreen=8
+			if event.key == pygame.K_F9: menuscreen=9
+			print("key:")
+			print(event.key)
+		elif event.type == pygame.MOUSEBUTTONDOWN:
+			r1=buttonsscreen.get_rect()
+			r2=buttonsscreen.get_abs_offset()
+			r1.left=r2[0]
+			r1.top=r2[1]
+			if r1.collidepoint(event.pos):
+				menuscreen=int(event.pos[0]/80)
+	mainclock.tick(24)
